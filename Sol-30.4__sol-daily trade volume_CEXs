@@ -1,0 +1,19 @@
+with et AS(
+SELECT
+    address
+    ,address_name
+FROM solana.core.dim_labels
+WHERE 
+    address_name ILIKE ANY ('%coinbase%', '%binance%')   -- top 2 CEXes by coingecko
+)
+    
+SELECT 
+    DATE_TRUNC('day', block_timestamp::TIMESTAMP):: DATE as day
+    ,SUM(COALESCE(swap_from_amount, swap_to_amount)) as solana_chain_CEX_t_vol
+FROM solana.core.fact_swaps
+WHERE
+    block_timestamp:: DATE BETWEEN '2023-03-01' AND '2023-03-26'
+    AND swapper IN (SELECT address FROM et)
+    AND succeeded
+GROUP BY 1
+ORDER BY 1 ASC;
