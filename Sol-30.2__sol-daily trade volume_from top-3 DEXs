@@ -1,0 +1,21 @@
+WITH top_3 AS(
+SELECT
+    swap_program as DEX_name
+    ,SUM(COALESCE(swap_from_amount, swap_to_amount)) as "SOL_cumm_trading_volume"
+FROM solana.core.fact_swaps
+WHERE block_timestamp:: DATE BETWEEN '2023-03-01'
+    AND '2023-03-26'
+GROUP BY 1
+ORDER BY 2 DESC
+LIMIT 3
+)
+
+SELECT 
+    DATE_TRUNC('day', block_timestamp):: DATE as day
+    ,SUM(COALESCE(swap_from_amount, swap_to_amount))/1000000 as sol_dex_t_vol
+FROM solana.core.fact_swaps
+WHERE block_timestamp:: DATE BETWEEN '2023-03-01'
+    AND '2023-03-26'
+    AND swap_program IN (SELECT DEX_name FROM top_3)
+GROUP BY 1
+ORDER BY 1 ASC;
